@@ -37,10 +37,10 @@ export function ListFooter({
   return (
     <View style={styles.listFooter}>
       <View style={styles.listFooterAvatar}>
-        <Image
+        {/* <Image
           source={require("../assets/images/avatar.png")}
           style={styles.avatarSmall}
-        />
+        /> */}
       </View>
       <View>
         <Pressable onPress={addThread} style={styles.input}>
@@ -230,10 +230,10 @@ export default function Modal() {
   }) => (
     <View style={styles.threadContainer}>
       <View style={styles.avatarContainer}>
-        <Image
+        {/* <Image
           source={require("../assets/images/avatar.png")}
           style={styles.avatar}
-        />
+        /> */}
         <View style={styles.threadLine} />
       </View>
       <View style={styles.contentContainer}>
