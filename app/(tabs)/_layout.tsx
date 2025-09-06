@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { type BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Tabs, useRouter } from "expo-router";
-import React, { useContext, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import {
   Animated,
   Modal,
@@ -42,6 +42,7 @@ const AnimatedTabBarButton = ({
         { flex: 1, justifyContent: "center", alignItems: "center" },
         style,
       ]}
+      // Disable Android ripple effect
       android_ripple={{ borderless: false, radius: 0 }}
     >
       <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
@@ -51,13 +52,20 @@ const AnimatedTabBarButton = ({
   );
 };
 
-const TabLayout = () => {
+export default function TabLayout() {
   const router = useRouter();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const closeLoginModal = () => setIsLoginModalOpen(false);
   const { user } = useContext(AuthContext);
   const isLoggedIn = !!user;
+  console.log("user", user, "isLoggedIn", isLoggedIn);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+  };
 
   const toLoginPage = () => {
     setIsLoginModalOpen(false);
@@ -70,19 +78,18 @@ const TabLayout = () => {
         backBehavior="history"
         screenOptions={{
           headerShown: false,
-          tabBarButton: (props: BottomTabBarButtonProps) => (
-            <AnimatedTabBarButton {...props} />
-          ),
+          tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
         }}
       >
         <Tabs.Screen
           name="(home)"
           options={{
+            tabBarLabel: () => null,
             tabBarIcon: ({ focused }) => (
               <Ionicons
                 name="home"
                 size={24}
-                color={focused ? "#000000" : "#ACACAC"}
+                color={focused ? "black" : "gray"}
               />
             ),
           }}
@@ -90,11 +97,12 @@ const TabLayout = () => {
         <Tabs.Screen
           name="search"
           options={{
+            tabBarLabel: () => null,
             tabBarIcon: ({ focused }) => (
               <Ionicons
                 name="search"
                 size={24}
-                color={focused ? "#000000" : "#ACACAC"}
+                color={focused ? "black" : "gray"}
               />
             ),
           }}
@@ -103,17 +111,22 @@ const TabLayout = () => {
           name="add"
           listeners={{
             tabPress: (e) => {
+              console.log("tabPress");
               e.preventDefault();
-              if (isLoggedIn) router.navigate("/modal");
-              else openLoginModal();
+              if (isLoggedIn) {
+                router.navigate("/modal");
+              } else {
+                openLoginModal();
+              }
             },
           }}
           options={{
+            tabBarLabel: () => null,
             tabBarIcon: ({ focused }) => (
               <Ionicons
                 name="add"
                 size={24}
-                color={focused ? "#000000" : "#ACACAC"}
+                color={focused ? "black" : "gray"}
               />
             ),
           }}
@@ -122,17 +135,19 @@ const TabLayout = () => {
           name="activity"
           listeners={{
             tabPress: (e) => {
-              e.preventDefault();
-              if (isLoggedIn) router.navigate("/modal");
-              else openLoginModal();
+              if (!isLoggedIn) {
+                e.preventDefault();
+                openLoginModal();
+              }
             },
           }}
           options={{
+            tabBarLabel: () => null,
             tabBarIcon: ({ focused }) => (
               <Ionicons
                 name="heart-outline"
                 size={24}
-                color={focused ? "#000000" : "#ACACAC"}
+                color={focused ? "black" : "gray"}
               />
             ),
           }}
@@ -141,23 +156,23 @@ const TabLayout = () => {
           name="[username]"
           listeners={{
             tabPress: (e) => {
-              e.preventDefault();
-              if (isLoggedIn) router.navigate("/modal");
-              else openLoginModal();
+              if (!isLoggedIn) {
+                e.preventDefault();
+                openLoginModal();
+              }
             },
           }}
           options={{
+            tabBarLabel: () => null,
             tabBarIcon: ({ focused }) => (
               <Ionicons
                 name="person-outline"
                 size={24}
-                color={focused ? "#000000" : "#ACACAC"}
+                color={focused ? "black" : "gray"}
               />
             ),
           }}
         />
-
-        {/* (tabs)의 '직속 자식 세그먼트'인 "(post)"를 name으로 지정해야 숨김이 제대로 적용됩니다. */}
         <Tabs.Screen
           name="(post)/[username]/post/[postID]"
           options={{
@@ -165,44 +180,28 @@ const TabLayout = () => {
           }}
         />
       </Tabs>
-      <Modal visible={isLoginModalOpen} transparent animationType="fade">
+      <Modal
+        visible={isLoginModalOpen}
+        transparent={true}
+        animationType="slide"
+      >
         <View
           style={{
             flex: 1,
             justifyContent: "flex-end",
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
           }}
         >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              paddingHorizontal: 20,
-              paddingVertical: 16,
-              borderTopLeftRadius: 12,
-              borderTopRightRadius: 12,
-            }}
-          >
+          <View style={{ backgroundColor: "white", padding: 20 }}>
             <Pressable onPress={toLoginPage}>
-              <Text
-                style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}
-              >
-                Login Modal
-              </Text>
+              <Text>Login Modal</Text>
             </Pressable>
-            <TouchableOpacity
-              onPress={closeLoginModal}
-              style={{
-                alignSelf: "flex-end",
-                padding: 8,
-              }}
-            >
-              <Ionicons name="close" size={24} color={"#555"} />
+            <TouchableOpacity onPress={closeLoginModal}>
+              <Ionicons name="close" size={24} color="#555" />
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </>
   );
-};
-
-export default TabLayout;
+}
