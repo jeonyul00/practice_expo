@@ -1,35 +1,63 @@
 {
   "expo": {
-    "name": "practice_expo",
-    "slug": "practice_expo",
+    "name": "threads-clone",
+    "slug": "threads-clone",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "practiceexpo",
+    "icon": "./assets/images/avatar.png",
+    "scheme": "threadc",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.zerocho.threads",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/avatar.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jeonyul.practice_expo"
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.zerocho.threads",
+      "googleServicesFile": "./google-services.json",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "splash": {
+      "image": "./assets/images/react-logo.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/react-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -42,6 +70,13 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them in your threads.",
+          "cameraPermission": "The app accesses your camera to let you share photos in your threads."
+        }
+      ],
+      [
         "expo-media-library",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
@@ -49,28 +84,45 @@
           "isAccessMediaLocationEnabled": true
         }
       ],
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser",
       [
-        "expo-image-picker",
+        "expo-build-properties",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
+          "android": {
+            "extraMavenRepos": [
+              "https://devrepo.kakao.com/nexus/content/groups/public/"
+            ]
+          }
         }
       ],
       [
-        "expo-secure-store",
+        "@react-native-kakao/core",
         {
-          "configureAndroidBackup": true,
-          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+          "nativeAppKey": "c428a9aa499e40f778d16513edbfa42d",
+          "android": {
+            "authCodeHandlerActivity": true
+          },
+          "ios": {
+            "handleKakaoOpenUrl": true
+          }
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {},
+      "apiUrl": "http://threads.nodebird.com",
       "eas": {
-        "projectId": "75d6b805-efcd-4b02-9457-f61eb30462c4"
+        "projectId": "ddaf49bd-3a77-4ac8-aedc-83ca210a67d2"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ddaf49bd-3a77-4ac8-aedc-83ca210a67d2"
     }
   }
 }

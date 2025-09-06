@@ -1,16 +1,17 @@
-import SideMenu from "@/components/SideMenu";
 import { Ionicons } from "@expo/vector-icons";
-import { useContext, useState } from "react";
 import {
-  Image,
   Pressable,
+  Text,
+  View,
   StyleSheet,
   TextInput,
   useColorScheme,
-  View,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useContext, useState } from "react";
 import { AuthContext } from "../_layout";
+import SideMenu from "@/components/SideMenu";
 
 export default function Index() {
   const insets = useSafeAreaInsets();

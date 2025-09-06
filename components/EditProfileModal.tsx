@@ -1,19 +1,19 @@
-import { AuthContext, type User } from "@/app/_layout";
-import { Ionicons } from "@expo/vector-icons";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
-  ActivityIndicator,
-  Image,
   Modal,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Switch,
+  Image,
+  ActivityIndicator,
+  SafeAreaView,
+  Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AuthContext, type User } from "@/app/_layout";
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -275,7 +275,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <View style={styles.switchTextContainer}>
             <Text style={styles.labelSwitch}>Private profile</Text>
             <Text style={styles.description}>
-              If you switch to private, you wont be able to reply to others
+              If you switch to private, you won't be able to reply to others
               unless they follow you.
             </Text>
           </View>

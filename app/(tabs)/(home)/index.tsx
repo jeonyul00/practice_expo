@@ -1,78 +1,132 @@
-import Post from "@/components/Post";
-import { useRouter } from "expo-router";
-import { StyleSheet, useColorScheme, View } from "react-native";
+import { View, StyleSheet, useColorScheme, PanResponder } from "react-native";
+import { usePathname } from "expo-router";
+import Post, { type Post as PostType } from "@/components/Post";
+import * as Haptics from "expo-haptics";
+import { FlashList } from "@shopify/flash-list";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { AnimationContext } from "./_layout";
+import Constants from "expo-constants";
+
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList<PostType>);
+
 export default function Index() {
-  const router = useRouter();
   const colorScheme = useColorScheme();
+  const path = usePathname();
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const scrollPosition = useSharedValue(0);
+  const isReadyToRefresh = useSharedValue(false);
+  const { pullDownPosition } = useContext(AnimationContext);
+
+  const onEndReached = useCallback(() => {
+    console.log("onEndReached", posts.at(-1)?.id);
+    fetch(
+      `${Constants.expoConfig?.extra?.apiUrl}/posts?cursor=${posts.at(-1)?.id}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.posts.length > 0) {
+          setPosts((prev) => [...prev, ...data.posts]);
+        }
+      });
+  }, [posts, path]);
+
+  const onRefresh = (done: () => void) => {
+    setPosts([]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    fetch(`${Constants.expoConfig?.extra?.apiUrl}/posts`)
+      .then((res) => res.json())
+      .then((data) => {
+        setPosts(data.posts);
+      })
+      .finally(() => {
+        done();
+      });
+  };
+
+  const onPanRelease = () => {
+    pullDownPosition.value = withTiming(isReadyToRefresh.value ? 60 : 0, {
+      duration: 180,
+    });
+    console.log("onPanRelease", isReadyToRefresh.value);
+    if (isReadyToRefresh.value) {
+      onRefresh(() => {
+        pullDownPosition.value = withTiming(0, {
+          duration: 180,
+        });
+      });
+    }
+  };
+
+  const panResponderRef = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (event, gestureState) => {
+        const max = 120;
+        pullDownPosition.value = Math.max(Math.min(gestureState.dy, max), 0);
+        console.log("pull", pullDownPosition.value);
+
+        if (
+          pullDownPosition.value >= max / 2 &&
+          isReadyToRefresh.value === false
+        ) {
+          isReadyToRefresh.value = true;
+        }
+        if (
+          pullDownPosition.value < max / 2 &&
+          isReadyToRefresh.value === true
+        ) {
+          isReadyToRefresh.value = false;
+        }
+      },
+      onPanResponderRelease: onPanRelease,
+      onPanResponderTerminate: onPanRelease,
+    })
+  );
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      console.log("onScroll", event.contentOffset.y);
+      scrollPosition.value = event.contentOffset.y;
+    },
+  });
+
+  const pullDownStyles = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateY: pullDownPosition.value,
+        },
+      ],
+    };
+  });
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.container,
         colorScheme === "dark" ? styles.containerDark : styles.containerLight,
+        pullDownStyles,
       ]}
+      {...panResponderRef.current.panHandlers}
     >
-      <Post
-        item={{
-          id: "0",
-          username: "madison",
-          displayName: "Madison",
-          content: "What is this?",
-          timeAgo: "30 minutes ago",
-          likes: 10,
-          comments: 5,
-          reposts: 2,
-          isVerified: true,
-          avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-          image: `https://picsum.photos/800/600?random=${Math.random()}`,
-          location: [37.125, 124.97],
-        }}
+      <AnimatedFlashList
+        refreshControl={<View />}
+        data={posts}
+        nestedScrollEnabled={true}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        renderItem={({ item }) => <Post item={item} />}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={2}
+        estimatedItemSize={350}
       />
-      <Post
-        item={{
-          id: "1",
-          username: "zerocho",
-          displayName: "Zerocho",
-          content: "Hello, world!",
-          timeAgo: "1 hour ago",
-          likes: 10,
-          comments: 5,
-          reposts: 2,
-          isVerified: true,
-          avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-        }}
-      />
-      <Post
-        item={{
-          id: "2",
-          username: "zerocho",
-          displayName: "Zerocho",
-          content: "Hello, world!",
-          timeAgo: "1 hour ago",
-          likes: 10,
-          comments: 5,
-          reposts: 2,
-          isVerified: true,
-          avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-        }}
-      />
-      <Post
-        item={{
-          id: "3",
-          username: "karina",
-          displayName: "Karina",
-          content: "Hello, world!",
-          timeAgo: "1 hour ago",
-          likes: 10,
-          comments: 5,
-          reposts: 2,
-          isVerified: true,
-          avatar: "https://randomuser.me/api/portraits/women/3.jpg",
-          image: `https://picsum.photos/800/600?random=${Math.random()}`,
-          location: [37.125, 124.97],
-        }}
-      />
-    </View>
+    </Animated.View>
   );
 }
 

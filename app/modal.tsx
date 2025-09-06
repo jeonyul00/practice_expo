@@ -1,31 +1,41 @@
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
-import * as MediaLibrary from "expo-media-library";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useContext,
+} from "react";
 import {
-  Alert,
-  FlatList,
-  Image,
-  Linking,
-  Pressable,
-  Modal as RNModal,
-  StyleSheet,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
+  FlatList,
+  Image,
+  StyleSheet,
+  Modal as RNModal,
+  Pressable,
+  Linking,
+  Alert,
   useColorScheme,
-  View,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Location from "expo-location";
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
+import Toast from "react-native-toast-message";
+import { EventEmitter } from "expo-modules-core";
+import BackgroundUploaderModule from "../modules/background-uploader";
+import { AuthContext } from "./_layout";
 
 interface Thread {
   id: string;
   text: string;
   hashtag?: string;
   location?: [number, number];
-  imageUris: string[];
+  imageUrls: string[];
 }
 
 export function ListFooter({
@@ -58,12 +68,13 @@ export default function Modal() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([
-    { id: Date.now().toString(), text: "", imageUris: [] },
+    { id: Date.now().toString(), text: "", imageUrls: [] },
   ]);
   const insets = useSafeAreaInsets();
   const [replyOption, setReplyOption] = useState("Anyone");
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const { user, login } = useContext(AuthContext);
 
   const replyOptions = ["Anyone", "Profiles you follow", "Mentioned only"];
 
@@ -72,7 +83,39 @@ export default function Modal() {
     router.back();
   };
 
-  const handlePost = () => {};
+  useEffect(() => {
+    const emitter = new EventEmitter<Record<string, any>>();
+    const sub = emitter.addListener(
+      "uploadFinished",
+      (data: { id: string; success: boolean }) => {
+        console.log("uploadFinished", data);
+        if (data.success) {
+          console.log("uploadFinished", data);
+          Toast.hide();
+          Toast.show({
+            text1: "Post posted",
+            type: "customToast",
+            visibilityTime: 5000,
+            position: "bottom",
+            bottomOffset: 20,
+            onPress: () => {
+              console.log("post pressed", data);
+              router.replace(`/@${user?.id}/post/${data.id}`);
+              Toast.hide();
+            },
+          });
+        }
+      }
+    );
+    return () => {
+      sub.remove();
+    };
+  }, []);
+
+  const handlePost = () => {
+    console.log("handlePost", threads);
+    BackgroundUploaderModule.startUpload(JSON.stringify(threads));
+  };
 
   const updateThreadText = (id: string, text: string) => {
     setThreads((prevThreads) =>
@@ -84,9 +127,9 @@ export default function Modal() {
 
   const canAddThread =
     (threads.at(-1)?.text.trim().length ?? 0) > 0 ||
-    (threads.at(-1)?.imageUris.length ?? 0) > 0;
+    (threads.at(-1)?.imageUrls.length ?? 0) > 0;
   const canPost = threads.every(
-    (thread) => thread.text.trim().length > 0 || thread.imageUris.length > 0
+    (thread) => thread.text.trim().length > 0 || thread.imageUrls.length > 0
   );
 
   const removeThread = (id: string) => {
@@ -122,7 +165,7 @@ export default function Modal() {
           thread.id === id
             ? {
                 ...thread,
-                imageUris: thread.imageUris.concat(
+                imageUrls: thread.imageUrls.concat(
                   result.assets?.map((asset) => asset.uri) ?? []
                 ),
               }
@@ -164,7 +207,7 @@ export default function Modal() {
           thread.id === id
             ? {
                 ...thread,
-                imageUris: thread.imageUris.concat(
+                imageUrls: thread.imageUrls.concat(
                   result.assets?.map((asset) => asset.uri) ?? []
                 ),
               }
@@ -180,7 +223,7 @@ export default function Modal() {
         thread.id === id
           ? {
               ...thread,
-              imageUris: thread.imageUris.filter((uri) => uri !== uriToRemove),
+              imageUrls: thread.imageUrls.filter((uri) => uri !== uriToRemove),
             }
           : thread
       )
@@ -271,9 +314,9 @@ export default function Modal() {
           onChangeText={(text) => updateThreadText(item.id, text)}
           multiline
         />
-        {item.imageUris && item.imageUris.length > 0 && (
+        {item.imageUrls && item.imageUrls.length > 0 && (
           <FlatList
-            data={item.imageUris}
+            data={item.imageUrls}
             renderItem={({ item: uri, index: imgIndex }) => (
               <View style={styles.imagePreviewContainer}>
                 <Image source={{ uri }} style={styles.imagePreview} />
@@ -379,7 +422,7 @@ export default function Modal() {
               if (canAddThread) {
                 setThreads((prevThreads) => [
                   ...prevThreads,
-                  { id: Date.now().toString(), text: "", imageUris: [] },
+                  { id: Date.now().toString(), text: "", imageUrls: [] },
                 ]);
               }
             }}

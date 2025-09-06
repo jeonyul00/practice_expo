@@ -1,27 +1,35 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Image,
-  Share,
+  View,
   StyleSheet,
   Text,
   TouchableOpacity,
+  Share,
   useColorScheme,
-  View,
+  Image,
+  Pressable,
+  Linking,
+  ScrollView,
 } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 
 export interface Post {
   id: string;
-  username: string;
-  displayName: string;
+  user: {
+    id: string;
+    name: string;
+    profileImageUrl: string;
+    isVerified?: boolean;
+  };
   content: string;
   timeAgo: string;
   likes: number;
   comments: number;
   reposts: number;
-  isVerified?: boolean;
-  avatar?: string;
-  image?: string;
+  imageUrls?: string[];
+  link?: string;
+  linkThumbnail?: string;
   location?: [number, number];
 }
 
@@ -50,6 +58,7 @@ export default function Post({ item }: { item: Post }) {
 
   // 게시글 클릭 핸들러 수정
   const handlePostPress = (post: Post) => {
+    console.log("postClick");
     // DetailedPost 타입에 맞게 데이터 변환 (isLiked, shares는 상세 화면에서 관리)
     const detailedPost: DetailedPost = {
       ...post,
@@ -58,12 +67,12 @@ export default function Post({ item }: { item: Post }) {
       isLiked: false, // 예시: 기본값 false
       shares: 0, // 예시: 기본값 0
     };
-    router.push(`/@${post.username}/post/${post.id}`);
+    router.push(`/@${post.user.id}/post/${post.id}`);
   };
 
   // 사용자 정보 클릭 핸들러 (아바타 또는 이름)
   const handleUserPress = (post: Post) => {
-    router.push(`/@${post.username}`);
+    router.push(`/@${post.user.id}`);
   };
 
   return (
@@ -75,8 +84,11 @@ export default function Post({ item }: { item: Post }) {
       <View style={styles.postHeader}>
         <View style={styles.userInfo}>
           <TouchableOpacity onPress={() => handleUserPress(item)}>
-            {item.avatar ? (
-              <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            {item.user.profileImageUrl ? (
+              <Image
+                source={{ uri: item.user.profileImageUrl }}
+                style={styles.avatar}
+              />
             ) : (
               <View style={styles.avatar}>
                 <Ionicons name="person-circle" size={40} color="#ccc" />
@@ -94,9 +106,9 @@ export default function Post({ item }: { item: Post }) {
                       : styles.usernameLight,
                   ]}
                 >
-                  {item.username}
+                  {item.user.id}
                 </Text>
-                {item.isVerified && (
+                {item.user.isVerified && (
                   <Ionicons
                     name="checkmark-circle"
                     size={16}
@@ -121,7 +133,7 @@ export default function Post({ item }: { item: Post }) {
         </View>
       </View>
 
-      <View style={styles.postContent}>
+      <View style={styles.postContent} pointerEvents="box-none">
         <Text
           style={[
             styles.postText,
@@ -130,12 +142,34 @@ export default function Post({ item }: { item: Post }) {
         >
           {item.content}
         </Text>
-        {item.image && (
-          <Image
-            source={{ uri: item.image }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
+        <View pointerEvents="box-none">
+          <ScrollView
+            pointerEvents="box-only"
+            horizontal
+            scrollEnabled
+            nestedScrollEnabled
+            contentContainerStyle={styles.postImages}
+          >
+            {item.imageUrls &&
+              item.imageUrls.length > 0 &&
+              item.imageUrls.map((image) => (
+                <Image
+                  key={image}
+                  source={{ uri: image }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              ))}
+          </ScrollView>
+        </View>
+        {!item.imageUrls?.length && item.link && (
+          <Pressable onPress={() => WebBrowser.openBrowserAsync(item.link!)}>
+            <Image
+              source={{ uri: item.linkThumbnail }}
+              style={styles.postLink}
+              resizeMode="cover"
+            />
+          </Pressable>
         )}
         {item.location && item.location.length > 0 && (
           <Text style={styles.postText}>{item.location.join(", ")}</Text>
@@ -163,7 +197,7 @@ export default function Post({ item }: { item: Post }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => handleShare(item.username, item.id)}
+          onPress={() => handleShare(item.user.id, item.id)}
         >
           <Feather name="send" size={20} color="#666" />
         </TouchableOpacity>
@@ -242,9 +276,19 @@ const styles = StyleSheet.create({
   postTextLight: {
     color: "#000",
   },
+  postImages: {
+    flexDirection: "row",
+    gap: 8,
+  },
   postImage: {
-    width: "100%",
+    width: 300,
     height: 300,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  postLink: {
+    width: "85%",
+    height: 200,
     borderRadius: 12,
     marginTop: 8,
   },

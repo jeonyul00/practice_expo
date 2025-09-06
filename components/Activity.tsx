@@ -1,12 +1,13 @@
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  StyleSheet,
+  useColorScheme,
+  Pressable,
+  Image,
+  Text,
 } from "react-native";
 
 export interface ActivityItemProps {
